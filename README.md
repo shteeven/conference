@@ -32,5 +32,6 @@ App Engine application for the Udacity training course.
 [6]: https://developers.google.com/appengine/docs/python/endpoints/endpoints_tool
 
 ## Design Decisions -- Session and Speaker Models
-The Session model is a child of Conference. The conferenceId and name are the only two fields that are required. The date and startTime properties are formatted as YYYY-MM-DD and HH:mm respectively, with the date property able to take in a dateTime format and splice it to the appropriate size. 
+The Session model is a child of Conference. The conferenceId and name are the only two fields that are required. The date and startTime properties are formatted as YYYY-MM-DD and HH:mm respectively, with the date property able to take in a dateTime format and splice it to the appropriate size.
+ 
 The Speaker model is a child of Users. The reason for this ancestry is so that the authorization and authentication, as well as other details, can be handled by the Profile entity and it's api. This was the speaker can edit his/her own information. This model acts as an extension of Profile model.
