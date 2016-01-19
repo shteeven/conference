@@ -70,6 +70,16 @@ SESSION_DEFAULTS = {
     "typeOfSession": "Types",
 }
 
+SESSION_TYPES = [
+    'lecture',
+    'workshop',
+    'presentation',
+    'roundtable',
+    'panel',
+    'think tank',
+    'professional development'
+]
+
 OPERATORS = {
     'EQ': '=',
     'GT': '>',
@@ -121,6 +131,12 @@ SESS_GET_BY_TIME_REQUEST = endpoints.ResourceContainer(
     message_types.VoidMessage,
     timeOfSessions=messages.StringField(1),
     websafeConferenceKey=messages.StringField(2),
+)
+
+SESS_GET_BY_TIME_AND_TYPE_REQUEST = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    timeOfSessions=messages.StringField(1),
+    typesOfSessions=messages.StringField(2, repeated=True),
 )
 
 SESS_POST_REQUEST = endpoints.ResourceContainer(
@@ -812,6 +828,26 @@ class ConferenceApi(remote.Service):
             items=[self._copySessionToForm(sess) for sess in sessions]
         )
 
+    @endpoints.method(SESS_GET_BY_TIME_AND_TYPE_REQUEST, SessionForms,
+                      path='getSessionsByTimeAndNotType',
+                      http_method='POST',
+                      name='getSessionsByTimeAndNotType')
+    def getSessionsByTimeAndNotType(self, request):
+        """Return sessions starting at/after a certain time and by type"""
+        # create ancestor query for all key matches for this user
+        sessionTime = datetime.strptime(request.timeOfSessions, "%H:%M").time()
+        types = set(SESSION_TYPES) - set(request.typesOfSessions)
+        print(types)
+        sessions = Session.query()
+        # can accept array
+        sessions = sessions.filter(Session.startTime >= sessionTime)
+        sessions = sessions.filter(Session.typeOfSession.IN(types))
+        # return set of ConferenceForm objects per Conference
+        return SessionForms(
+            items=[self._copySessionToForm(sess) for sess in sessions]
+        )
+
+
 
 # - - - Announcements - - - - - - - - - - - - - - - - - - - -
 
@@ -829,7 +865,8 @@ class ConferenceApi(remote.Service):
             announcement = FEATURED_SPEAKER_STR % sessions[0].speaker
             announcement += ', '.join(sess.name for sess in sessions)
             memcache.set(MEMCACHE_FEATURED_SPEAKER_KEY, announcement)
-
+        else:
+            announcement = ''
         return announcement
 
     @endpoints.method(message_types.VoidMessage, StringMessage,
