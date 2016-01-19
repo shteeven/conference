@@ -77,7 +77,8 @@ SESSION_TYPES = [
     'roundtable',
     'panel',
     'think tank',
-    'professional development'
+    'professional development',
+    'other'
 ]
 
 OPERATORS = {
@@ -149,10 +150,7 @@ WL_GET_REQUEST = endpoints.ResourceContainer(
     websafeSessionKey=messages.StringField(1),
 )
 
-
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
+# - - - - - - - - - - Endpoints Start - - - - - - - - - - - - - - - -
 
 @endpoints.api(name='conference', version='v1', audiences=[ANDROID_AUDIENCE],
                allowed_client_ids=[WEB_CLIENT_ID, API_EXPLORER_CLIENT_ID, ANDROID_CLIENT_ID, IOS_CLIENT_ID],
@@ -858,7 +856,6 @@ class ConferenceApi(remote.Service):
         sessions = Session.query(Session.conferenceId == c_id)
         sessions = sessions.filter(Session.speaker == request.get('speaker'))
         sessions = sessions.fetch()
-        print('HERERE')
         if len(sessions) >= 2:
             # If there are almost sold out conferences,
             # format announcement and set it in memcache

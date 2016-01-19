@@ -43,8 +43,13 @@ Sessions can be looked up based on the conference they are under, speaker name, 
 There are two additional queries: getSessionsOfTypes and getSessionsByTime. 
 getSessionsOfTypes function takes a list of types of sessions the user would like to see.
 It then looks up the sessions and returns a list of session forms that match the criteria.
-The getSessionsByTime takes in a string with the time formatted as HH:MM.
+The getSessionsByTime takes in a string with the time formatted as HH:mm.
 It then queries for sessions that start at or after the time specified. 
 This function also returns a list of session forms.
 
--- getSessionsOfTypes: 
+
+## Query Related Problem
+The is with having the time and exclusion of a type of session is that NDB does not allow inequalities on two different fields.
+My solution to this is having a constant list of possible session types and removing those types the user has selected to exclude.
+With the remaining list of types, the query is then filtered with Session.typesOfSession.IN(types); types being the list of remaining types that the user has not excluded.
+This solution can be done with a single or list value. My implementation takes in a list of values.
