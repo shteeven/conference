@@ -113,7 +113,7 @@ class ConferenceQueryForms(messages.Message):
 # - - - - - - - - - - Session Models - - - - - - - - -
 class Session(ndb.Model):
     name            = ndb.StringProperty(required=True)
-    ConferenceId    = ndb.IntegerProperty(required=True)
+    conferenceId    = ndb.IntegerProperty(required=True)
     highlights      = ndb.TextProperty(repeated=True)
     speaker         = ndb.StringProperty()
     duration        = ndb.StringProperty()
@@ -123,7 +123,7 @@ class Session(ndb.Model):
 
 class SessionForm(messages.Message):
     name            = messages.StringField(1)
-    ConferenceId    = messages.IntegerField(2)
+    conferenceId    = messages.IntegerField(2)
     highlights      = messages.StringField(3, repeated=True)
     speaker         = messages.StringField(4)
     duration        = messages.StringField(5)
@@ -138,26 +138,20 @@ class SessionForms(messages.Message):
     items = messages.MessageField(SessionForm, 1, repeated=True)
 
 # - - - - - - - - - - Speaker Models - - - - - - - - -
-#
-# class Speaker(ndb.Model):
-#     name            = ndb.StringProperty(required=True)
-#     userId          = ndb.IntegerProperty(required=True)
-#     credentials     = ndb.TextProperty(repeated=True)
-#     images          = ndb.StringProperty(repeated=True)
-#     company         = ndb.StringProperty()
-#
-# class SpeakerForm(messages.Message):
-#     name            = messages.StringField(1)
-#     ConferenceId    = messages.IntegerField(2)
-#     highlights      = messages.StringField(3, repeated=True)
-#     speaker         = messages.StringField(4)
-#     duration        = messages.StringField(5)
-#     typeOfSession   = messages.StringField(6)
-#     date            = messages.StringField(7)
-#     startTime       = messages.StringField(8)
-#     websafeKey      = messages.StringField(9)
-#
-#
-# class SpeakerForms(messages.Message):
-#     """ConferenceForms -- multiple Conference outbound form message"""
-#     items = messages.MessageField(SessionForm, 1, repeated=True)
+
+class Speaker(ndb.Model):
+    name            = ndb.StringProperty(required=True)
+    userId          = ndb.IntegerProperty(required=True)
+    credentials     = ndb.TextProperty(repeated=True)
+    company         = ndb.StringProperty()
+
+class SpeakerForm(messages.Message):
+    name            = messages.StringField(1)
+    userId          = messages.IntegerField(2)
+    credentials     = messages.StringField(3, repeated=True)
+    company         = messages.StringField(4)
+
+
+class SpeakerForms(messages.Message):
+    """ConferenceForms -- multiple Conference outbound form message"""
+    items = messages.MessageField(SessionForm, 1, repeated=True)

@@ -633,7 +633,7 @@ class ConferenceApi(remote.Service):
         # generate Conference Key based on user ID and Conference
         # ID based on Profile key get Conference key from ID
         c_key = ndb.Key(urlsafe=request.websafeConferenceKey)
-        data['ConferenceId'] = c_key.id()
+        data['conferenceId'] = c_key.id()
         s_id = Session.allocate_ids(size=1, parent=c_key)[0]
         s_key = ndb.Key(Session, s_id, parent=c_key)
         data['key'] = s_key
@@ -646,7 +646,7 @@ class ConferenceApi(remote.Service):
         sess = s_key.get()
         if data['speaker']:
             taskqueue.add(params={'speaker': data['speaker'],
-                                  'conferenceId': data['ConferenceId']
+                                  'conferenceId': data['conferenceId']
                                   },
                           url='/tasks/set_featured_speaker'
                           )
@@ -819,7 +819,7 @@ class ConferenceApi(remote.Service):
     def _cacheFeaturedSpeaker(request):
         """Create Announcement for featured speaker & assign to memcache."""
         c_id = int(request.get('conferenceId'))
-        sessions = Session.query(Session.ConferenceId == c_id)
+        sessions = Session.query(Session.conferenceId == c_id)
         sessions = sessions.filter(Session.speaker == request.get('speaker'))
         sessions = sessions.fetch()
         print('HERERE')
