@@ -134,6 +134,28 @@ class SessionForm(messages.Message):
 
 
 class SessionForms(messages.Message):
-    """ConferenceForms -- multiple Conference outbound form message"""
+    """SessionForms -- multiple Session outbound form message"""
     items = messages.MessageField(SessionForm, 1, repeated=True)
+
+
+# - - - - - - - - - - Speaker Models - - - - - - - - -
+class Speaker(ndb.Model):
+    name            = ndb.StringProperty(required=True)
+    bio             = ndb.TextProperty()
+    credentials     = ndb.StringProperty(repeated=True)
+    title           = ndb.StringProperty()
+    email           = ndb.StringProperty(required=True)
+
+class SpeakerForm(messages.Message):
+    name            = messages.StringField(1)
+    bio             = messages.StringField(2)
+    credentials     = messages.StringField(3, repeated=True)
+    title           = messages.StringField(4)
+    email           = messages.StringField(5)
+    websafeKey      = messages.StringField(6)
+
+
+class SpeakerForms(messages.Message):
+    """SpeakerForms -- multiple Speaker outbound form message"""
+    items = messages.MessageField(SpeakerForm, 1, repeated=True)
 
