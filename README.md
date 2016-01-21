@@ -56,12 +56,18 @@ The getSessionsByTime takes in a string with the time formatted as HH:mm.
 It then queries for sessions that start at or after the time specified. 
 This function also returns a list of session forms.
 
-
 ## Query Related Problem
 The problem with having the time and exclusion of a type of session is that NDB does not allow inequalities on two different fields.
 My solution to have a constant list of possible session types and remove those types the user has selected to exclude.
 With the remaining list of types, the query is then filtered with Session.typesOfSession.IN(types); types being the list of remaining types that the user has not excluded.
 This solution can be done with a single or list value. My implementation takes in a list of values.
+
+## Musts
+Profile must exist for Conference functions to work properly.
+Conference must exist in order for Session to be created.
+Speaker must exist in order to populate Session.speaker.
+Session must exist in order to populate Profile.wishlist.
+Conference must exist in order to populate Profile.conferenceToAttend.
 
 ## Side Notes
 The path of the api are very inconsistent. 
