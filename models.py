@@ -115,17 +115,17 @@ class Session(ndb.Model):
     name            = ndb.StringProperty(required=True)
     conferenceId    = ndb.IntegerProperty(required=True)
     highlights      = ndb.TextProperty(repeated=True)
-    speaker         = ndb.StringProperty()
+    speakerId       = ndb.StringProperty()
     duration        = ndb.StringProperty()
     typeOfSession   = ndb.StringProperty()
     date            = ndb.DateProperty()
     startTime       = ndb.TimeProperty()
 
-class SessionForm(messages.Message):
+class SessionInForm(messages.Message):
     name            = messages.StringField(1)
     conferenceId    = messages.IntegerField(2)
     highlights      = messages.StringField(3, repeated=True)
-    speaker         = messages.StringField(4)
+    speakerId       = messages.StringField(4)
     duration        = messages.StringField(5)
     typeOfSession   = messages.StringField(6)
     date            = messages.StringField(7)
@@ -133,9 +133,26 @@ class SessionForm(messages.Message):
     websafeKey      = messages.StringField(9)
 
 
+class SessionOutForm(messages.Message):
+    name            = messages.StringField(1)
+    conferenceId    = messages.IntegerField(2)
+    highlights      = messages.StringField(3, repeated=True)
+    speakerId       = messages.StringField(4)
+    duration        = messages.StringField(5)
+    typeOfSession   = messages.StringField(6)
+    date            = messages.StringField(7)
+    startTime       = messages.StringField(8)
+    websafeKey      = messages.StringField(9)
+    speakerName     = messages.StringField(10)
+    speakerBio      = messages.StringField(11)
+    speakerCredentials = messages.StringField(12, repeated=True)
+    speakerTitle    = messages.StringField(13)
+    speakerEmail    = messages.StringField(14)
+
+
 class SessionForms(messages.Message):
     """SessionForms -- multiple Session outbound form message"""
-    items = messages.MessageField(SessionForm, 1, repeated=True)
+    items = messages.MessageField(SessionOutForm, 1, repeated=True)
 
 
 # - - - - - - - - - - Speaker Models - - - - - - - - -
@@ -144,7 +161,7 @@ class Speaker(ndb.Model):
     bio             = ndb.TextProperty()
     credentials     = ndb.StringProperty(repeated=True)
     title           = ndb.StringProperty()
-    email           = ndb.StringProperty(required=True)
+    email           = ndb.StringProperty()
 
 class SpeakerForm(messages.Message):
     name            = messages.StringField(1)
