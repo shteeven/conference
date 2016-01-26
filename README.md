@@ -72,3 +72,103 @@ Conference must exist in order to populate Profile.conferenceToAttend.
 ## Side Notes
 The path of the api are very inconsistent. 
 They work, but there is a much better way of doing; I'm just too busy to deal with it.
+
+
+## Formatting
+LINES --
+Python files in this project do not adhere to the PEP 80 characters/line
+maximum. For the sake of readability in the authors dev environment, the lines 
+have a max length of 120 characters.
+FUNCTION NAMES --
+In order to increase readability when scanning the API Explorer and to 
+help with understanding the purpose of the function, the names of functions will 
+follow one of these structures: 
+
+-- For APIs:
+ 'entityAction'
+ 'entityActionWhat'
+
+-- For class functions:
+ '_actionEntity'
+ '_actionEntityWhat'
+ '_actionWhat'
+ 
+Where entity is the 'entity', or object, the function is designed for; 
+'action' is the primary action that will be executed; 
+and 'What' is the extraneous objects or the 'by', 'to', 'for', or 'from' followed by an object.
+
+
+
+## URL Usages By Function
+This is a reference to help organize paths and void conflicts
+Convention is 'entityCategory', 'entityCategory/:key', 
+'entityCategory/action', 'entityCategory/(by, in or for)' or 'entityCategory/action/:key'
+
+
+
+- GETs:
+
+(conference)
+'conference' - 
+'conference/{websafeKey}' - 
+'conference' - 
+'conference/announcement' - 
+'conference/attending' - 
+
+(profile)
+'profile' - profileGet - VoidMessage
+
+(session)
+'
+
+
+
+- POSTs:
+
+(conference)
+'conference' - conferenceCreate - ConferenceForm
+'conference/query' - conferenceQuery - ConferenceQueryForms
+'conference/register/{websafeKey}' - conferenceRegisterFor - CONF_GET_REQUEST
+
+(profile)
+'profile' - profileSave - PofileMiniForm
+
+(session)
+'session' - sessionGetBySpeaker - CONF_GET_REQUEST
+'session/{websafeKey}' - sessionGetByConference - CONF_GET_REQUEST
+
+
+
+- DELETEs:
+
+(conference)
+'conference/register/{websafeKey}' - conferenceUnregisterFrom - CONF_GET_REQUEST
+
+
+- PUTs:
+
+(conference)
+'conference/{websafeKey}' - 'conferenceUpdate' - CONF_POST_REQUEST
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

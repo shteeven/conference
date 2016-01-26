@@ -26,8 +26,8 @@ class Profile(ndb.Model):
     displayName             = ndb.StringProperty()
     mainEmail               = ndb.StringProperty()
     teeShirtSize            = ndb.StringProperty(default='NOT_SPECIFIED')
-    conferenceKeysToAttend  = ndb.StringProperty(repeated=True)
-    sessionKeysInWishlist   = ndb.StringProperty(repeated=True)
+    conferencesToAttend  = ndb.StringProperty(repeated=True)
+    sessionsWishlist   = ndb.StringProperty(repeated=True)
 
 class ProfileMiniForm(messages.Message):
     """ProfileMiniForm -- update Profile form message"""
