@@ -26,8 +26,8 @@ class Profile(ndb.Model):
     displayName             = ndb.StringProperty()
     mainEmail               = ndb.StringProperty()
     teeShirtSize            = ndb.StringProperty(default='NOT_SPECIFIED')
-    conferencesToAttend  = ndb.StringProperty(repeated=True)
-    sessionsWishlist   = ndb.StringProperty(repeated=True)
+    conferencesToAttend     = ndb.KeyProperty(repeated=True)
+    sessionsWishlist        = ndb.KeyProperty(repeated=True)
 
 class ProfileMiniForm(messages.Message):
     """ProfileMiniForm -- update Profile form message"""
@@ -39,8 +39,8 @@ class ProfileForm(messages.Message):
     displayName             = messages.StringField(1)
     mainEmail               = messages.StringField(2)
     teeShirtSize            = messages.EnumField('TeeShirtSize', 3)
-    conferenceKeysToAttend  = messages.StringField(4, repeated=True)
-    sessionWishlist         = messages.StringField(5, repeated=True)
+    conferencesToAttend      = messages.IntegerField(4, repeated=True)
+    sessionsWishlist         = messages.IntegerField(5, repeated=True)
 
 class StringMessage(messages.Message):
     """StringMessage-- outbound (single) string message"""
@@ -113,36 +113,35 @@ class ConferenceQueryForms(messages.Message):
 # - - - - - - - - - - Session Models - - - - - - - - -
 class Session(ndb.Model):
     name            = ndb.StringProperty(required=True)
-    conferenceId    = ndb.IntegerProperty(required=True)
+    conferenceKey    = ndb.KeyProperty(required=True, kind='Conference')
     highlights      = ndb.TextProperty(repeated=True)
-    speakerId       = ndb.StringProperty()
+    speakerKey       = ndb.KeyProperty(kind='Speaker')
     duration        = ndb.StringProperty()
     typeOfSession   = ndb.StringProperty()
     date            = ndb.DateProperty()
     startTime       = ndb.TimeProperty()
 
 class SessionInForm(messages.Message):
-    name            = messages.StringField(1)
-    conferenceId    = messages.IntegerField(2)
+    name            = messages.StringField(1, required=True)
+    websafeConferenceKey = messages.StringField(2, required=True)
     highlights      = messages.StringField(3, repeated=True)
-    speakerId       = messages.StringField(4)
+    websafeSpeakerKey = messages.StringField(4)
     duration        = messages.StringField(5)
     typeOfSession   = messages.StringField(6)
     date            = messages.StringField(7)
     startTime       = messages.StringField(8)
-    websafeKey      = messages.StringField(9)
-
+    websafeKey      = messages.StringField(9)  # session websafe key
 
 class SessionOutForm(messages.Message):
     name            = messages.StringField(1)
-    conferenceId    = messages.IntegerField(2)
+    websafeConferenceKey = messages.StringField(2)
     highlights      = messages.StringField(3, repeated=True)
-    speakerId       = messages.StringField(4)
+    websafeSpeakerKey = messages.StringField(4)
     duration        = messages.StringField(5)
     typeOfSession   = messages.StringField(6)
     date            = messages.StringField(7)
     startTime       = messages.StringField(8)
-    websafeKey      = messages.StringField(9)
+    websafeKey      = messages.StringField(9)  # session websafe key
     speakerName     = messages.StringField(10)
     speakerBio      = messages.StringField(11)
     speakerCredentials = messages.StringField(12, repeated=True)

@@ -79,6 +79,7 @@ LINES --
 Python files in this project do not adhere to the PEP 80 characters/line
 maximum. For the sake of readability in the authors dev environment, the lines 
 have a max length of 120 characters.
+
 FUNCTION NAMES --
 In order to increase readability when scanning the API Explorer and to 
 help with understanding the purpose of the function, the names of functions will 
@@ -97,29 +98,37 @@ Where entity is the 'entity', or object, the function is designed for;
 'action' is the primary action that will be executed; 
 and 'What' is the extraneous objects or the 'by', 'to', 'for', or 'from' followed by an object.
 
+WEBSAFE KEYS --
+All websafe keys in forms are a reference to the object/form itself unless the key specifies another entity:
+ 'websafeKey' - refence to self
+ 'websafeSessionKey' - reference to Session entity
+
 
 
 ## URL Usages By Function
-This is a reference to help organize paths and void conflicts
-Convention is 'entityCategory', 'entityCategory/:key', 
-'entityCategory/action', 'entityCategory/(by, in or for)' or 'entityCategory/action/:key'
+This is a reference to help organize paths and avoid conflicts. 
+Entity is the primary object being dealt with, and the noun is the 
+portion of the function name that is usually preceded by a verb or preposition.
+For example, 'sessionGetByConference' would have a path of 'session/conference'.
 
-
+Convention for this app is 'entity', 'entity/{key}', 'entity/noun' 
+or 'entity/noun/{key}'
 
 - GETs:
 
 (conference)
-'conference' - 
-'conference/{websafeKey}' - 
-'conference' - 
+'conference' ... HAS NO FUNC; Should be a 'get all', but conferenceQuery fills the role.
+'conference/user' - conferenceGetCreated - VoidMessage
 'conference/announcement' - 
 'conference/attending' - 
+'conference' - 
+6
 
 (profile)
 'profile' - profileGet - VoidMessage
 
 (session)
-'
+'session/conference/{websafeKey}' - sessionGetByConference - CONF_GET_REQUEST
 
 
 
@@ -135,7 +144,7 @@ Convention is 'entityCategory', 'entityCategory/:key',
 
 (session)
 'session' - sessionGetBySpeaker - CONF_GET_REQUEST
-'session/{websafeKey}' - sessionGetByConference - CONF_GET_REQUEST
+
 
 
 
@@ -148,10 +157,10 @@ Convention is 'entityCategory', 'entityCategory/:key',
 - PUTs:
 
 (conference)
-'conference/{websafeKey}' - 'conferenceUpdate' - CONF_POST_REQUEST
+'conference' - 'conferenceUpdate' - ConferenceForm ... Websafe key is in the form
 
 
-
+15 functions
 
 
 

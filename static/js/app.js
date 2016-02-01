@@ -24,7 +24,7 @@ var app = angular.module('conferenceApp',
                     templateUrl: '/partials/create_conferences.html',
                     controller: 'CreateConferenceCtrl'
                 }).
-                when('/conference/detail/:websafeConferenceKey', {
+                when('/conference/detail/:websafeKey', {
                     templateUrl: '/partials/conference_detail.html',
                     controller: 'ConferenceDetailCtrl'
                 }).

@@ -63,7 +63,7 @@ conferenceApp.controllers.controller('MyProfileCtrl',
             var retrieveProfileCallback = function () {
                 $scope.profile = {};
                 $scope.loading = true;
-                gapi.client.conference.getProfile().
+                gapi.client.conference.profileGet().
                     execute(function (resp) {
                         $scope.$apply(function () {
                             $scope.loading = false;
@@ -94,7 +94,7 @@ conferenceApp.controllers.controller('MyProfileCtrl',
         $scope.saveProfile = function () {
             $scope.submitted = true;
             $scope.loading = true;
-            gapi.client.conference.saveProfile($scope.profile).
+            gapi.client.conference.profileSave($scope.profile).
                 execute(function (resp) {
                     $scope.$apply(function () {
                         $scope.loading = false;
@@ -215,7 +215,7 @@ conferenceApp.controllers.controller('CreateConferenceCtrl',
             }
 
             $scope.loading = true;
-            gapi.client.conference.createConference($scope.conference).
+            gapi.client.conference.conferenceCreate($scope.conference).
                 execute(function (resp) {
                     $scope.$apply(function () {
                         $scope.loading = false;
@@ -442,7 +442,7 @@ conferenceApp.controllers.controller('ShowConferenceCtrl', function ($scope, $lo
             }
         }
         $scope.loading = true;
-        gapi.client.conference.queryConferences(sendFilters).
+        gapi.client.conference.conferenceQuery(sendFilters).
             execute(function (resp) {
                 $scope.$apply(function () {
                     $scope.loading = false;
@@ -474,7 +474,7 @@ conferenceApp.controllers.controller('ShowConferenceCtrl', function ($scope, $lo
      */
     $scope.getConferencesCreated = function () {
         $scope.loading = true;
-        gapi.client.conference.getConferencesCreated().
+        gapi.client.conference.conferencesGetCreated().
             execute(function (resp) {
                 $scope.$apply(function () {
                     $scope.loading = false;
@@ -512,7 +512,7 @@ conferenceApp.controllers.controller('ShowConferenceCtrl', function ($scope, $lo
      */
     $scope.getConferencesAttend = function () {
         $scope.loading = true;
-        gapi.client.conference.getConferencesToAttend().
+        gapi.client.conference.conferencesGetToAttend().
             execute(function (resp) {
                 $scope.$apply(function () {
                     if (resp.error) {
@@ -560,8 +560,8 @@ conferenceApp.controllers.controller('ConferenceDetailCtrl', function ($scope, $
      */
     $scope.init = function () {
         $scope.loading = true;
-        gapi.client.conference.getConference({
-            websafeConferenceKey: $routeParams.websafeConferenceKey
+        gapi.client.conference.conferenceGet({
+            websafeKey: $routeParams.websafeKey
         }).execute(function (resp) {
             $scope.$apply(function () {
                 $scope.loading = false;
@@ -582,15 +582,15 @@ conferenceApp.controllers.controller('ConferenceDetailCtrl', function ($scope, $
 
         $scope.loading = true;
         // If the user is attending the conference, updates the status message and available function.
-        gapi.client.conference.getProfile().execute(function (resp) {
+        gapi.client.conference.profileGet().execute(function (resp) {
             $scope.$apply(function () {
                 $scope.loading = false;
                 if (resp.error) {
                     // Failed to get a user profile.
                 } else {
                     var profile = resp.result;
-                    for (var i = 0; i < profile.conferenceKeysToAttend.length; i++) {
-                        if ($routeParams.websafeConferenceKey == profile.conferenceKeysToAttend[i]) {
+                    for (var i = 0; i < profile.conferencesToAttend.length; i++) {
+                        if ($routeParams.websafeKey == profile.conferencesToAttend[i]) {
                             // The user is attending the conference.
                             $scope.alertStatus = 'info';
                             $scope.messages = 'You are attending this conference';
@@ -608,8 +608,8 @@ conferenceApp.controllers.controller('ConferenceDetailCtrl', function ($scope, $
      */
     $scope.registerForConference = function () {
         $scope.loading = true;
-        gapi.client.conference.registerForConference({
-            websafeConferenceKey: $routeParams.websafeConferenceKey
+        gapi.client.conference.conferenceRegisterFor({
+            websafeKey: $routeParams.websafeKey
         }).execute(function (resp) {
             $scope.$apply(function () {
                 $scope.loading = false;
@@ -645,8 +645,8 @@ conferenceApp.controllers.controller('ConferenceDetailCtrl', function ($scope, $
      */
     $scope.unregisterFromConference = function () {
         $scope.loading = true;
-        gapi.client.conference.unregisterFromConference({
-            websafeConferenceKey: $routeParams.websafeConferenceKey
+        gapi.client.conference.conferenceUnegisterFrom({
+            websafeKey: $routeParams.websafeKey
         }).execute(function (resp) {
             $scope.$apply(function () {
                 $scope.loading = false;
