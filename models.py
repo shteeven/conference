@@ -39,8 +39,9 @@ class ProfileForm(messages.Message):
     displayName             = messages.StringField(1)
     mainEmail               = messages.StringField(2)
     teeShirtSize            = messages.EnumField('TeeShirtSize', 3)
-    conferencesToAttend      = messages.IntegerField(4, repeated=True)
-    sessionsWishlist         = messages.IntegerField(5, repeated=True)
+    # TODO: Are these unnecessary?
+    # conferencesToAttend      = messages.IntegerField(4, repeated=True)
+    # sessionsWishlist         = messages.IntegerField(5, repeated=True)
 
 class StringMessage(messages.Message):
     """StringMessage-- outbound (single) string message"""
@@ -112,9 +113,10 @@ class ConferenceQueryForms(messages.Message):
 
 # - - - - - - - - - - Session Models - - - - - - - - -
 class Session(ndb.Model):
+    """Session -- Session object"""
     name            = ndb.StringProperty(required=True)
     conferenceKey    = ndb.KeyProperty(required=True, kind='Conference')
-    highlights      = ndb.TextProperty(repeated=True)
+    highlights      = ndb.StringProperty(repeated=True)
     speakerKey       = ndb.KeyProperty(kind='Speaker')
     duration        = ndb.StringProperty()
     typeOfSession   = ndb.StringProperty()
@@ -122,6 +124,7 @@ class Session(ndb.Model):
     startTime       = ndb.TimeProperty()
 
 class SessionInForm(messages.Message):
+    """SessionInForm -- Session inbound form object"""
     name            = messages.StringField(1, required=True)
     websafeConferenceKey = messages.StringField(2, required=True)
     highlights      = messages.StringField(3, repeated=True)
@@ -133,6 +136,7 @@ class SessionInForm(messages.Message):
     websafeKey      = messages.StringField(9)  # session websafe key
 
 class SessionOutForm(messages.Message):
+    """SessionOutForm -- Session outbound form object"""
     name            = messages.StringField(1)
     websafeConferenceKey = messages.StringField(2)
     highlights      = messages.StringField(3, repeated=True)
@@ -156,6 +160,7 @@ class SessionForms(messages.Message):
 
 # - - - - - - - - - - Speaker Models - - - - - - - - -
 class Speaker(ndb.Model):
+    """Speaker -- Speaker object"""
     name            = ndb.StringProperty(required=True)
     bio             = ndb.TextProperty()
     credentials     = ndb.StringProperty(repeated=True)
@@ -163,7 +168,8 @@ class Speaker(ndb.Model):
     email           = ndb.StringProperty()
 
 class SpeakerForm(messages.Message):
-    name            = messages.StringField(1)
+    """SpeakerForm -- Speaker outbound form"""
+    name            = messages.StringField(1, required=True)
     bio             = messages.StringField(2)
     credentials     = messages.StringField(3, repeated=True)
     title           = messages.StringField(4)

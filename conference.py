@@ -102,6 +102,7 @@ FIELDS = {
 
 # - - - - - - Request Containers - - - - - - - -
 
+# Containers names do not necessarily restrict their usage to conference functions
 CONF_GET_REQUEST = endpoints.ResourceContainer(
     message_types.VoidMessage,
     websafeKey=messages.StringField(1, required=True),
@@ -122,23 +123,11 @@ CONF_GET_BY_TIME_TYPES_REQUEST = endpoints.ResourceContainer(
 CONF_GET_BY_TIME_REQUEST = endpoints.ResourceContainer(
     message_types.VoidMessage,
     time=messages.StringField(1),
-    types=messages.StringField(2, repeated=True),
 )
 
 CONF_GET_BY_TYPES_REQUEST = endpoints.ResourceContainer(
     message_types.VoidMessage,
     types=messages.StringField(1, repeated=True),
-)
-
-CONF_PUT_REQUEST = endpoints.ResourceContainer(
-    ConferenceForm,
-    websafeKey=messages.StringField(1, required=True)
-)
-
-SESS_POST_REQUEST = endpoints.ResourceContainer(
-    SessionInForm,
-    # websafeConferenceKey=messages.StringField(1, required=True),
-    # websafeSpeakerKey=messages.StringField(2),
 )
 
 SPEAKER_GET_BY = endpoints.ResourceContainer(
@@ -157,13 +146,13 @@ class ConferenceApi(remote.Service):
     """Conference API v0.1"""
 
     # - - - Helpers - - - - - - - - - - - - - - - - - - - - - -
-    def _validateKey(self, websafe_key):
+    def _validateKey(self, websafeKey):
         """Takes a websafe key and returns the entity (obj) and its key."""
 
         # NDB accepts trail and lead whitespaces;
         # this allows duplicates because Python sees it as different strings
-        if websafe_key:
-            key = websafe_key.strip()
+        if websafeKey:
+            key = websafeKey.strip()
             try:
                 key = ndb.Key(urlsafe=key)
                 obj = key.get()
@@ -309,7 +298,7 @@ class ConferenceApi(remote.Service):
         return self._updateConferenceObject(request)
 
     @endpoints.method(CONF_GET_REQUEST, ConferenceForm,
-                      path='conference',
+                      path='conference/{websafeKey}',
                       http_method='GET', name='conferenceGet')
     def conferenceGet(self, request):
         """Return requested conference (by websafeKey)."""
@@ -324,142 +313,7 @@ class ConferenceApi(remote.Service):
         """Create new conference."""
         return self._createConferenceObject(request)
 
-    # - - - - Queries for Conf - - - - - -
-
-    def _getQuery(self, request):
-        """Return formatted query from the submitted filters."""
-        q = Conference.query()
-        inequality_filter, filters = self._formatFilters(request.filters)
-
-        # If exists, sort on inequality filter first
-        if not inequality_filter:
-            q = q.order(Conference.name)
-        else:
-            q = q.order(ndb.GenericProperty(inequality_filter))
-            q = q.order(Conference.name)
-
-        for filtr in filters:
-            if filtr["field"] in ["month", "maxAttendees"]:
-                filtr["value"] = int(filtr["value"])
-            formatted_query = ndb.query.FilterNode(filtr["field"], filtr["operator"], filtr["value"])
-            q = q.filter(formatted_query)
-        return q
-
-    def _formatFilters(self, filters):
-        """Parse, check validity and format user supplied filters."""
-        formatted_filters = []
-        inequality_field = None
-
-        for f in filters:
-            filtr = {field.name: getattr(f, field.name) for field in f.all_fields()}
-
-            try:
-                filtr["field"] = FIELDS[filtr["field"]]
-                filtr["operator"] = OPERATORS[filtr["operator"]]
-            except KeyError:
-                raise endpoints.BadRequestException("Filter contains invalid field or operator.")
-
-            # Every operation except "=" is an inequality
-            if filtr["operator"] != "=":
-                # check if inequality operation has been used in previous filters
-                # disallow the filter if inequality was performed on a different field before
-                # track the field on which the inequality operation is performed
-                if inequality_field and inequality_field != filtr["field"]:
-                    raise endpoints.BadRequestException("Inequality filter is allowed on only one field.")
-                else:
-                    inequality_field = filtr["field"]
-
-            formatted_filters.append(filtr)
-        return (inequality_field, formatted_filters)
-
-    @endpoints.method(ConferenceQueryForms, ConferenceForms, path='conference/query',
-                      http_method='GET', name='conferenceQuery')
-    def conferenceQuery(self, request):
-        """Query for conferences."""
-        conferences = self._getQuery(request)
-
-        # need to fetch organiser displayName from profiles
-        # get all keys and use get_multi for speed
-        organisers = [(ndb.Key(Profile, conf.organizerUserId)) for conf in conferences]
-        profiles = ndb.get_multi(organisers)
-
-        # put display names in a dict for easier fetching
-        names = {}
-        for profile in profiles:
-            names[profile.key.id()] = profile.displayName
-
-        # return individual ConferenceForm object per Conference
-        return ConferenceForms(
-            items=[self._copyConferenceToForm(conf, names[conf.organizerUserId])
-                   for conf in conferences])
-
-    # - - - Profile objects - - - - - - - - - - - - - - - - - - -
-    def _copyProfileToForm(self, prof):
-        """Copy relevant fields from Profile to ProfileForm."""
-        # copy relevant fields from Profile to ProfileForm
-        pf = ProfileForm()
-        for field in pf.all_fields():
-            if hasattr(prof, field.name):
-                # convert t-shirt string to Enum; just copy others
-                if field.name == 'teeShirtSize':
-                    setattr(pf, field.name, getattr(TeeShirtSize, getattr(prof, field.name)))
-                else:
-                    setattr(pf, field.name, getattr(prof, field.name))
-        pf.check_initialized()
-        return pf
-
-    def _getProfileFromUser(self):
-        """Return user Profile from datastore, creating new one if non-existent."""
-        user, user_id = self._validateUser()
-
-        p_key = ndb.Key(Profile, user_id)
-        profile = p_key.get()
-        # create new Profile if not there
-        if not profile:
-            profile = Profile(
-                key=p_key,
-                displayName=user.nickname(),
-                mainEmail=user.email(),
-                teeShirtSize=str(TeeShirtSize.NOT_SPECIFIED),
-            )
-            profile.put()
-
-        return profile  # return Profile
-
-    def _doProfile(self, save_request=None):
-        """Get user Profile and return to user, possibly updating it first."""
-        # get user Profile
-        prof = self._getProfileFromUser()
-
-        # if saveProfile(), process user-modifyable fields
-        if save_request:
-            for field in ('displayName', 'teeShirtSize'):
-                if hasattr(save_request, field):
-                    val = getattr(save_request, field)
-                    if val:
-                        setattr(prof, field, str(val))
-                        # if field == 'teeShirtSize':
-                        #    setattr(prof, field, str(val).upper())
-                        # else:
-                        #    setattr(prof, field, val)
-                        prof.put()
-
-        # return ProfileForm
-        return self._copyProfileToForm(prof)
-
-    @endpoints.method(message_types.VoidMessage, ProfileForm,
-                      path='profile', http_method='GET', name='profileGet')
-    def profileGet(self, request):
-        """Return user profile."""
-        return self._doProfile()
-
-    @endpoints.method(ProfileMiniForm, ProfileForm,
-                      path='profile', http_method='POST', name='profileSave')
-    def profileSave(self, request):
-        """Update & return user profile."""
-        return self._doProfile(request)
-
-    # - - - Announcements - - - - - - - - - - - - - - - - - - - -
+        # - - - Announcements - - - - - - - - - - - - - - - - - - - -
     @staticmethod
     def _cacheAnnouncement():
         """Create Announcement & assign to memcache; used by
@@ -535,7 +389,7 @@ class ConferenceApi(remote.Service):
         return BooleanMessage(data=retval)
 
     @endpoints.method(message_types.VoidMessage, ConferenceForms,
-                      path='registration',
+                      path='conference/registration',
                       http_method='GET', name='conferenceGetToAttend')
     def conferenceGetToAttend(self, request):
         """Get list of conferences that user has registered for."""
@@ -557,18 +411,155 @@ class ConferenceApi(remote.Service):
                                       for conf in conferences])
 
     @endpoints.method(CONF_GET_REQUEST, BooleanMessage,
-                      path='registration',
+                      path='conference/registration',
                       http_method='POST', name='conferenceRegisterFor')
     def conferenceRegisterFor(self, request):
         """Register user for selected conference."""
         return self._registerForConference(request)
 
     @endpoints.method(CONF_GET_REQUEST, BooleanMessage,
-                      path='registration',
+                      path='conference/registration',
                       http_method='DELETE', name='conferenceUnregisterFrom')
     def conferenceUnregisterFrom(self, request):
         """Unregister user for selected conference."""
         return self._registerForConference(request, reg=False)
+
+    # - - - - Queries for Conf - - - - - -
+
+    def _getQuery(self, request):
+        """Return formatted query from the submitted filters."""
+        q = Conference.query()
+        inequality_filter, filters = self._formatFilters(request.filters)
+
+        # If exists, sort on inequality filter first
+        if not inequality_filter:
+            q = q.order(Conference.name)
+        else:
+            q = q.order(ndb.GenericProperty(inequality_filter))
+            q = q.order(Conference.name)
+
+        for filtr in filters:
+            if filtr["field"] in ["month", "maxAttendees"]:
+                filtr["value"] = int(filtr["value"])
+            formatted_query = ndb.query.FilterNode(filtr["field"], filtr["operator"], filtr["value"])
+            q = q.filter(formatted_query)
+        return q
+
+    def _formatFilters(self, filters):
+        """Parse, check validity and format user supplied filters."""
+        formatted_filters = []
+        inequality_field = None
+
+        for f in filters:
+            filtr = {field.name: getattr(f, field.name) for field in f.all_fields()}
+
+            try:
+                filtr["field"] = FIELDS[filtr["field"]]
+                filtr["operator"] = OPERATORS[filtr["operator"]]
+            except KeyError:
+                raise endpoints.BadRequestException("Filter contains invalid field or operator.")
+
+            # Every operation except "=" is an inequality
+            if filtr["operator"] != "=":
+                # check if inequality operation has been used in previous filters
+                # disallow the filter if inequality was performed on a different field before
+                # track the field on which the inequality operation is performed
+                if inequality_field and inequality_field != filtr["field"]:
+                    raise endpoints.BadRequestException("Inequality filter is allowed on only one field.")
+                else:
+                    inequality_field = filtr["field"]
+
+            formatted_filters.append(filtr)
+        return (inequality_field, formatted_filters)
+
+    @endpoints.method(ConferenceQueryForms, ConferenceForms, path='conference',
+                      http_method='GET', name='conferenceQuery')
+    def conferenceQuery(self, request):
+        """Query for conferences."""
+        conferences = self._getQuery(request)
+
+        # need to fetch organiser displayName from profiles
+        # get all keys and use get_multi for speed
+        organisers = [(ndb.Key(Profile, conf.organizerUserId)) for conf in conferences]
+        profiles = ndb.get_multi(organisers)
+
+        # put display names in a dict for easier fetching
+        names = {}
+        for profile in profiles:
+            names[profile.key.id()] = profile.displayName
+
+        # return individual ConferenceForm object per Conference
+        return ConferenceForms(
+            items=[self._copyConferenceToForm(conf, names[conf.organizerUserId])
+                   for conf in conferences])
+
+    # - - - Profile objects - - - - - - - - - - - - - - - - - - -
+    def _copyProfileToForm(self, prof):
+        """Copy relevant fields from Profile to ProfileForm."""
+        # copy relevant fields from Profile to ProfileForm
+        pf = ProfileForm()
+        for field in pf.all_fields():
+            print(field)
+            if hasattr(prof, field.name):
+                # convert t-shirt string to Enum; just copy others
+                if field.name == 'teeShirtSize':
+                    setattr(pf, field.name, getattr(TeeShirtSize, getattr(prof, field.name)))
+                else:
+                    setattr(pf, field.name, getattr(prof, field.name))
+        pf.check_initialized()
+        print(pf)
+        return pf
+
+    def _getProfileFromUser(self):
+        """Return user Profile from datastore, creating new one if non-existent."""
+        user, user_id = self._validateUser()
+
+        p_key = ndb.Key(Profile, user_id)
+        profile = p_key.get()
+        # create new Profile if not there
+        if not profile:
+            profile = Profile(
+                key=p_key,
+                displayName=user.nickname(),
+                mainEmail=user.email(),
+                teeShirtSize=str(TeeShirtSize.NOT_SPECIFIED),
+            )
+            profile.put()
+
+        return profile  # return Profile
+
+    def _doProfile(self, save_request=None):
+        """Get user Profile and return to user, possibly updating it first."""
+        # get user Profile
+        prof = self._getProfileFromUser()
+
+        # if saveProfile(), process user-modifyable fields
+        if save_request:
+            for field in ('displayName', 'teeShirtSize'):
+                if hasattr(save_request, field):
+                    val = getattr(save_request, field)
+                    if val:
+                        setattr(prof, field, str(val))
+                        # if field == 'teeShirtSize':
+                        #    setattr(prof, field, str(val).upper())
+                        # else:
+                        #    setattr(prof, field, val)
+                        prof.put()
+
+        # return ProfileForm
+        return self._copyProfileToForm(prof)
+
+    @endpoints.method(message_types.VoidMessage, ProfileForm,
+                      path='profile', http_method='GET', name='profileGet')
+    def profileGet(self, request):
+        """Return user profile."""
+        return self._doProfile()
+
+    @endpoints.method(ProfileMiniForm, ProfileForm,
+                      path='profile', http_method='POST', name='profileSave')
+    def profileSave(self, request):
+        """Update & return user profile."""
+        return self._doProfile(request)
 
     # - - - - - - - - - - - - Sessions - - - - - - - - - - - - - -
     def _copySessionToForm(self, sess):
@@ -681,7 +672,7 @@ class ConferenceApi(remote.Service):
             items=[self._copySessionToForm(sess) for sess in sessions]
         )
 
-    @endpoints.method(SESS_POST_REQUEST, SessionOutForm,
+    @endpoints.method(SessionInForm, SessionOutForm,
                       path='session',
                       http_method='POST', name='sessionCreate')
     def sessionCreate(self, request):
@@ -722,7 +713,7 @@ class ConferenceApi(remote.Service):
         return BooleanMessage(data=retval)
 
     @endpoints.method(message_types.VoidMessage, SessionForms,
-                      path='wishlist',
+                      path='session/wishlist',
                       http_method='GET', name='wishlistGetSessions')
     def wishlistGetSessions(self, request):
         """Query for all the sessions in a conference that the user is interested in"""
@@ -733,15 +724,16 @@ class ConferenceApi(remote.Service):
         # return set of SessionOutForm objects per Session
         return SessionForms(items=[self._copySessionToForm(sess) for sess in sessions])
 
+    #TODO: May be a conflict on this and CREATE SESSION
     @endpoints.method(CONF_GET_REQUEST, BooleanMessage,
-                      path='wishlist',
+                      path='session/wishlist',
                       http_method='POST', name='wishlistAddSession')
     def wishlistAddSession(self, request):
         """Adds the session to the user's list of sessions they are interested in attending"""
         return self._editWishlist(request)
-    #
+
     @endpoints.method(CONF_GET_REQUEST, BooleanMessage,
-                      path='wishlist',
+                      path='session/wishlist',
                       http_method='DELETE', name='wishlistDeleteSession')
     def wishlistDeleteSession(self, request):
         """Delete session from user wishlist."""
@@ -762,8 +754,8 @@ class ConferenceApi(remote.Service):
         # return set of ConferenceForm objects per Conference
         return SessionForms(items=[self._copySessionToForm(sess) for sess in sessions])
 
-    @endpoints.method(CONF_GET_BY_TIME_REQUEST, SessionForms, path='getSessionsByTime',
-                      http_method='POST', name='sessionGetByTime')
+    @endpoints.method(CONF_GET_BY_TIME_REQUEST, SessionForms, path='session/time',
+                      http_method='GET', name='sessionGetByTime')
     def sessionGetByTime(self, request):
         """Return sessions starting at/after a certain time"""
         # create ancestor query for all key matches for this user
@@ -773,7 +765,7 @@ class ConferenceApi(remote.Service):
         # return set of SessionForm objects
         return SessionForms(items=[self._copySessionToForm(sess) for sess in sessions])
 
-    @endpoints.method(CONF_GET_BY_TIME_TYPES_REQUEST, SessionForms, path='session/times/types',
+    @endpoints.method(CONF_GET_BY_TIME_TYPES_REQUEST, SessionForms, path='session/time/types',
                       http_method='GET', name='sessionGetByTimeByNotTypes')
     def sessionGetByTimeByNotTypes(self, request):
         """Return sessions starting at/after a certain time and by type"""
@@ -804,11 +796,8 @@ class ConferenceApi(remote.Service):
             announcement = FEATURED_SPEAKER_STR % speaker.name
             announcement += ', '.join(sess.name for sess in sessions)
             memcache.set(MEMCACHE_FEATURED_SPEAKER_KEY, announcement)
-        else:
-            announcement = ''
-        return announcement
 
-    @endpoints.method(message_types.VoidMessage, StringMessage, path='speaker/get/featured',
+    @endpoints.method(message_types.VoidMessage, StringMessage, path='speaker/featured',
                       http_method='GET', name='speakerGetFeatured')
     def speakerGetFeatured(self, request):
         """Return Announcement from memcache."""
@@ -849,16 +838,16 @@ class ConferenceApi(remote.Service):
 
         return self._copySpeakerToForm(speaker)
 
-    @endpoints.method(CONF_GET_REQUEST, SpeakerForm,
-                      path='speaker/get', http_method='GET', name='speakerGet')
+    @endpoints.method(CONF_GET_REQUEST, SpeakerForm, path='speaker/{websafeKey}',
+                      http_method='GET', name='speakerGet')
     def speakerGet(self, request):
         """Return speaker info for websafeKey."""
         speaker, s_key = self._validateKey(request.websafeKey)
         return self._copySpeakerToForm(speaker)
 
     @endpoints.method(SPEAKER_GET_BY, SpeakerForms,
-                      path='speaker/query',
-                      http_method='POST', name='speakerQuery')
+                      path='speaker',
+                      http_method='GET', name='speakerQuery')
     def speakerQuery(self, request):
         """Return speakers by email, name, or query all if no criteria specified."""
         # should only return one speaker
@@ -877,7 +866,7 @@ class ConferenceApi(remote.Service):
         )
 
     @endpoints.method(SpeakerForm, SpeakerForm,
-                      path='speaker/create',
+                      path='speaker',
                       http_method='POST', name='speakerCreate')
     def speakerCreate(self, request):
         """Create new speaker."""

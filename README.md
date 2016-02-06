@@ -32,152 +32,137 @@ App Engine application for the Udacity training course.
 [6]: https://developers.google.com/appengine/docs/python/endpoints/endpoints_tool
 
 ## Design Decisions -- Session and Speaker Models
-The Session model is a child of Conference. 
-The conferenceId and name are the only two fields that are required. 
-The date and startTime properties are formatted as YYYY-MM-DD and HH:mm respectively, with the date property able to take in a dateTime format and splice it to the appropriate size.
-Speaker field should be populated by a Speaker entity websafeKey.
-Sessions can be looked up based on the conference they are under, speaker name, start time, and type, or types if the user selects multiple. 
- 
-Speaker entities provide a websafe key in their forms to be inserted in Session entities. 
-name and email fields are both required, with the email being unique to that speaker. 
-The idea behind this design is that as a session is being created by the user, a separate component on the front-end will allow the user to look up speakers and select the one that is speaking at the session.
-The data from the speaker object selected is passed to the function or controller that will be submitting the createSession request.
-There is nothing to assert that the speaker key is removed from the session entity if the speaker entity is deleted.
-This functionality can be implemented in a deleteSpeaker function if created.
+The Session model is a child of Conference. The conferenceKey and name 
+are the only two fields that are required. The speakerKey field will be 
+populated if a websafeSpeakerKey is sent with the SessionInForm. The date 
+and startTime properties are formatted as YYYY-MM-DD and HH:mm respectively, 
+with the date property able to take in a dateTime format and splice it to 
+the appropriate size. Sessions can be looked up based on the conference they 
+are under, speaker name, start time, and type, or types if the user selects 
+multiple. 
 
-To populate a session page with complete information (speaker and session data), two requests are required:
-getSpeaker and a getSession____. It can be in one with modification or creation of a session form.
+Under Sessions, highlights field is a list of StringFields. This a choice 
+based on the assumption that highlights will be short and displayed as 
+lists, rather than paragraphs. 
  
+Speaker entities provide a websafe key in their forms to be inserted in 
+SessionInForm. The name field is required. 
+
+
 ## Additional Queries
-There are two additional queries: getSessionsOfTypes and getSessionsByTime. 
-getSessionsOfTypes function takes a list of types of sessions the user would like to see.
-It then looks up the sessions and returns a list of session forms that match the criteria.
-The getSessionsByTime takes in a string with the time formatted as HH:mm.
-It then queries for sessions that start at or after the time specified. 
-This function also returns a list of session forms.
+There are two additional queries: sessionGetOfTypes and sessionGetByTime. 
+sessionGetOfTypes function takes a list of types of sessions the user would 
+like to see. It then looks up the sessions and returns a list of session 
+forms that match the criteria. The sessionGetByTime takes in a string with 
+the time formatted as HH:mm. It then queries for sessions that start at or 
+after the time specified. This function also returns a list of session forms.
 
 ## Query Related Problem
-The problem with having the time and exclusion of a type of session is that NDB does not allow inequalities on two different fields.
-My solution to have a constant list of possible session types and remove those types the user has selected to exclude.
-With the remaining list of types, the query is then filtered with Session.typesOfSession.IN(types); types being the list of remaining types that the user has not excluded.
-This solution can be done with a single or list value. My implementation takes in a list of values.
-
-## Musts
-Profile must exist for Conference functions to work properly.
-Conference must exist in order for Session to be created.
-Speaker must exist in order to populate Session.speaker.
-Session must exist in order to populate Profile.wishlist.
-Conference must exist in order to populate Profile.conferenceToAttend.
-
-## Side Notes
-The path of the api are very inconsistent. 
-They work, but there is a much better way of doing; I'm just too busy to deal with it.
+The problem with having the time and exclusion of a type of session is that 
+NDB does not allow inequalities on two different fields. My solution to have 
+a constant list of possible session types and remove those types the user 
+has selected to exclude. With the remaining list of types, the query is then 
+filtered with Session.typesOfSession.IN(types); types being the list of 
+remaining types that the user has not excluded. This solution can be done 
+with a single or list value. My implementation takes in a list of values.
 
 
 ## Formatting
-LINES --
-Python files in this project do not adhere to the PEP 80 characters/line
+### LINES --
+Python files in this project do not adhere to the PEP-8 80 characters/line
 maximum. For the sake of readability in the authors dev environment, the lines 
 have a max length of 120 characters.
 
-FUNCTION NAMES --
+### FUNCTION NAMES --
 In order to increase readability when scanning the API Explorer and to 
-help with understanding the purpose of the function, the names of functions will 
-follow one of these structures: 
+help with understanding the purpose of the function, the names of functions 
+will follow one of these structures: 
 
--- For APIs:
+##### -- For APIs:
  'entityAction'
  'entityActionWhat'
 
--- For class functions:
+##### -- For class functions:
  '_actionEntity'
  '_actionEntityWhat'
  '_actionWhat'
  
 Where entity is the 'entity', or object, the function is designed for; 
-'action' is the primary action that will be executed; 
-and 'What' is the extraneous objects or the 'by', 'to', 'for', or 'from' followed by an object.
+'action' is the primary action that will be executed; and 'What' is the 
+extraneous objects/fields or the 'by', 'to', 'for', or 'from' followed by 
+an object/field.
 
-WEBSAFE KEYS --
-All websafe keys in forms are a reference to the object/form itself unless the key specifies another entity:
+### WEBSAFE KEYS --
+All websafe keys in forms are a reference to the object/form itself unless 
+the key specifies another entity.
+For example:
  'websafeKey' - refence to self
  'websafeSessionKey' - reference to Session entity
 
-
-
 ## URL Usages By Function
-This is a reference to help organize paths and avoid conflicts. 
-Entity is the primary object being dealt with, and the noun is the 
-portion of the function name that is usually preceded by a verb or preposition.
-For example, 'sessionGetByConference' would have a path of 'session/conference'.
+This is a reference to help organize paths and avoid conflicts. Entity 
+is the primary object being dealt with, and the noun is the portion of 
+the function name that is usually preceded by a verb or preposition. For 
+example, 'sessionGetByConference' would have a path of 
+'session/conference'. Use of websafe keys in url paths is intentional; 
+this helps to avoid key and sub-path recognition conflicts.
 
 Convention for this app is 'entity', 'entity/{key}', 'entity/noun' 
 or 'entity/noun/{key}'
 
-- GETs:
+##### -- GETs:
 
 (conference)
-'conference' ... HAS NO FUNC; Should be a 'get all', but conferenceQuery fills the role.
-'conference/user' - conferenceGetCreated - VoidMessage
-'conference/announcement' - 
-'conference/attending' - 
-'conference' - 
-6
+- 'conference/user' - conferenceGetCreated - VoidMessage
+- 'conference/announcement' - announcementGet - VoidMessage
+- 'conference/{websafeKey}' - conferenceGet - CONF_GET_REQUEST
+- 'conference/registration' - conferenceGetToAttend - VoidMessage
+- 'conference' - conferenceQuery - ConferenceQueryForms
 
 (profile)
-'profile' - profileGet - VoidMessage
+- 'profile' - profileGet - VoidMessage
 
 (session)
-'session/conference/{websafeKey}' - sessionGetByConference - CONF_GET_REQUEST
+- 'session/conference/type' - sessionGetByConferenceByType - CONF_GET_BY_TYPE_REQUEST
+- 'session/conference' - sessionGetByConference - CONF_GET_REQUEST
+- 'session/speaker' - sessionGetBySpeaker - CONF_GET_REQUEST
+- 'session/wishlist' - wishlistGetSessions - VoidMessage
+- 'session/types' - sessionGetOfTypes - CONF_GET_BY_TYPES_REQUEST
+- 'session/time' - sessionGetByTime - CONF_GET_BY_TIME_REQUEST
+- 'session/time/types' - sessionGetByTimeByNotTypes - CONF_GET_BY_TIME_TYPES_REQUEST
+
+(speaker)
+- 'speaker/featured' - speakerGetFeatured - VoidMessage
+- 'speaker/{websafeKey}' - speakerGet - CONF_GET_REQUEST
+- 'speaker' - speakerQuery - SPEAKER_GET_BY
 
 
-
-- POSTs:
+##### -- POSTs:
 
 (conference)
-'conference' - conferenceCreate - ConferenceForm
-'conference/query' - conferenceQuery - ConferenceQueryForms
-'conference/register/{websafeKey}' - conferenceRegisterFor - CONF_GET_REQUEST
+- 'conference' - conferenceCreate - ConferenceForm
+- 'conference/registration' - conferenceRegisterFor - CONF_GET_REQUEST
 
 (profile)
-'profile' - profileSave - PofileMiniForm
+- 'profile' - profileSave - PofileMiniForm
 
 (session)
-'session' - sessionGetBySpeaker - CONF_GET_REQUEST
+- 'session' - sessionCreate - SessionInForm
+- 'session/wishlist' - wishlistAddSession - CONF_GET_REQUEST
 
+(speaker)
+- 'speaker' - speakerCreate - SpeakerForm
 
-
-
-- DELETEs:
-
-(conference)
-'conference/register/{websafeKey}' - conferenceUnregisterFrom - CONF_GET_REQUEST
-
-
-- PUTs:
+##### -- DELETEs:
 
 (conference)
-'conference' - 'conferenceUpdate' - ConferenceForm ... Websafe key is in the form
+- 'conference/registration' - conferenceUnregisterFrom - CONF_GET_REQUEST
 
+(session)
+- 'session/wishlist' - wishlistDeleteSession - CONF_GET_REQUEST
 
-15 functions
+##### -- PUTs:
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+(conference)
+- 'conference' - 'conferenceUpdate' - ConferenceForm
 
