@@ -301,7 +301,7 @@ class ConferenceApi(remote.Service):
                       path='conference/{websafeKey}',
                       http_method='GET', name='conferenceGet')
     def conferenceGet(self, request):
-        """Return requested conference (by websafeKey)."""
+        """Return requested conference by websafeKey."""
         conf, c_key = self._validateKey(request.websafeKey)
         prof = conf.key.parent().get()
         # return ConferenceForm
@@ -392,7 +392,7 @@ class ConferenceApi(remote.Service):
                       path='conference/registration',
                       http_method='GET', name='conferenceGetToAttend')
     def conferenceGetToAttend(self, request):
-        """Get list of conferences that user has registered for."""
+        """Get a list of conferences that user has registered for."""
         prof = self._getProfileFromUser()  # get user Profile
         conf_keys = [ndb.Key(urlsafe=wsck) for wsck in prof.conferencesToAttend]
         conferences = ndb.get_multi(conf_keys)
@@ -421,7 +421,7 @@ class ConferenceApi(remote.Service):
                       path='conference/registration',
                       http_method='DELETE', name='conferenceUnregisterFrom')
     def conferenceUnregisterFrom(self, request):
-        """Unregister user for selected conference."""
+        """Unregister user from selected conference."""
         return self._registerForConference(request, reg=False)
 
     # - - - - Queries for Conf - - - - - -
@@ -475,7 +475,7 @@ class ConferenceApi(remote.Service):
     @endpoints.method(ConferenceQueryForms, ConferenceForms, path='conference',
                       http_method='GET', name='conferenceQuery')
     def conferenceQuery(self, request):
-        """Query for conferences."""
+        """Query for conferences by criteria or query all if none specified."""
         conferences = self._getQuery(request)
 
         # need to fetch organiser displayName from profiles
@@ -663,7 +663,7 @@ class ConferenceApi(remote.Service):
                       path='session/speaker',
                       http_method='GET', name='sessionGetBySpeaker')
     def sessionGetBySpeaker(self, request):
-        """Return sessions of a speaker's websafe ID."""
+        """Return sessions by a speaker's websafeKey."""
         # create query for all key matches for this speaker
         speaker, s_key = self._validateKey(request.websafeKey)
         sessions = Session.query(Session.websafeSpeakerKey == s_key)
@@ -714,9 +714,9 @@ class ConferenceApi(remote.Service):
 
     @endpoints.method(message_types.VoidMessage, SessionForms,
                       path='session/wishlist',
-                      http_method='GET', name='wishlistGetSessions')
-    def wishlistGetSessions(self, request):
-        """Query for all the sessions in a conference that the user is interested in"""
+                      http_method='GET', name='sessionsGetFromWishlist')
+    def sessionsGetFromWishlist(self, request):
+        """Query for all the sessions that the user is interested in"""
         prof = self._getProfileFromUser()  # get user Profile
         # sess_keys = [ndb.Key(urlsafe=wsk) for wsk in prof.sessionsWishlist]
         sessions = [s_key.get() for s_key in prof.sessionsWishlist]
@@ -727,15 +727,15 @@ class ConferenceApi(remote.Service):
     #TODO: May be a conflict on this and CREATE SESSION
     @endpoints.method(CONF_GET_REQUEST, BooleanMessage,
                       path='session/wishlist',
-                      http_method='POST', name='wishlistAddSession')
-    def wishlistAddSession(self, request):
+                      http_method='POST', name='sessionAddToWishlist')
+    def sessionAddToWishlist(self, request):
         """Adds the session to the user's list of sessions they are interested in attending"""
         return self._editWishlist(request)
 
     @endpoints.method(CONF_GET_REQUEST, BooleanMessage,
                       path='session/wishlist',
-                      http_method='DELETE', name='wishlistDeleteSession')
-    def wishlistDeleteSession(self, request):
+                      http_method='DELETE', name='sessionDeleteFromWishlist')
+    def sessionDeleteFromWishlist(self, request):
         """Delete session from user wishlist."""
         return self._editWishlist(request, reg=False)
 
@@ -768,7 +768,7 @@ class ConferenceApi(remote.Service):
     @endpoints.method(CONF_GET_BY_TIME_TYPES_REQUEST, SessionForms, path='session/time/types',
                       http_method='GET', name='sessionGetByTimeByNotTypes')
     def sessionGetByTimeByNotTypes(self, request):
-        """Return sessions starting at/after a certain time and by type"""
+        """Return sessions starting at/after a certain time and by types not given."""
         # create ancestor query for all key matches for this user
         sessionTime = datetime.strptime(request.time, "%H:%M").time()
         types = set(SESSION_TYPES) - set(request.types)
@@ -800,7 +800,7 @@ class ConferenceApi(remote.Service):
     @endpoints.method(message_types.VoidMessage, StringMessage, path='speaker/featured',
                       http_method='GET', name='speakerGetFeatured')
     def speakerGetFeatured(self, request):
-        """Return Announcement from memcache."""
+        """Return featured speaker from memcache, if existent."""
         return StringMessage(data=memcache.get(MEMCACHE_FEATURED_SPEAKER_KEY) or "")
 
     # - - - - - - - - - - - - Speaker - - - - - - - - - - - - - -
