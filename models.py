@@ -39,9 +39,6 @@ class ProfileForm(messages.Message):
     displayName             = messages.StringField(1)
     mainEmail               = messages.StringField(2)
     teeShirtSize            = messages.EnumField('TeeShirtSize', 3)
-    # TODO: Are these unnecessary?
-    # conferencesToAttend      = messages.IntegerField(4, repeated=True)
-    # sessionsWishlist         = messages.IntegerField(5, repeated=True)
 
 class StringMessage(messages.Message):
     """StringMessage-- outbound (single) string message"""
@@ -66,7 +63,7 @@ class Conference(ndb.Model):
 
 class ConferenceForm(messages.Message):
     """ConferenceForm -- Conference outbound form message"""
-    name            = messages.StringField(1)
+    name            = messages.StringField(1, required=True)
     description     = messages.StringField(2)
     organizerUserId = messages.StringField(3)
     topics          = messages.StringField(4, repeated=True)

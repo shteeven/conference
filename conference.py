@@ -136,7 +136,6 @@ SPEAKER_GET_BY = endpoints.ResourceContainer(
     email=messages.StringField(2),
 )
 
-
 # - - - - - - - - - - Endpoints Start - - - - - - - - - - - - - - - -
 
 @endpoints.api(name='conference', version='v1', audiences=[ANDROID_AUDIENCE],
@@ -394,8 +393,8 @@ class ConferenceApi(remote.Service):
     def conferenceGetToAttend(self, request):
         """Get a list of conferences that user has registered for."""
         prof = self._getProfileFromUser()  # get user Profile
-        conf_keys = [ndb.Key(urlsafe=wsck) for wsck in prof.conferencesToAttend]
-        conferences = ndb.get_multi(conf_keys)
+        # conf_keys = [ndb.Key(urlsafe=wsck) for wsck in prof.conferencesToAttend]
+        conferences = ndb.get_multi(prof.conferencesToAttend)
 
         # get organizers
         organisers = [ndb.Key(Profile, conf.organizerUserId) for conf in conferences]
@@ -499,7 +498,6 @@ class ConferenceApi(remote.Service):
         # copy relevant fields from Profile to ProfileForm
         pf = ProfileForm()
         for field in pf.all_fields():
-            print(field)
             if hasattr(prof, field.name):
                 # convert t-shirt string to Enum; just copy others
                 if field.name == 'teeShirtSize':
@@ -507,7 +505,6 @@ class ConferenceApi(remote.Service):
                 else:
                     setattr(pf, field.name, getattr(prof, field.name))
         pf.check_initialized()
-        print(pf)
         return pf
 
     def _getProfileFromUser(self):
@@ -666,7 +663,7 @@ class ConferenceApi(remote.Service):
         """Return sessions by a speaker's websafeKey."""
         # create query for all key matches for this speaker
         speaker, s_key = self._validateKey(request.websafeKey)
-        sessions = Session.query(Session.websafeSpeakerKey == s_key)
+        sessions = Session.query(Session.speakerKey == s_key)
         # return set of SessionOutForm objects for speaker
         return SessionForms(
             items=[self._copySessionToForm(sess) for sess in sessions]
@@ -724,7 +721,6 @@ class ConferenceApi(remote.Service):
         # return set of SessionOutForm objects per Session
         return SessionForms(items=[self._copySessionToForm(sess) for sess in sessions])
 
-    #TODO: May be a conflict on this and CREATE SESSION
     @endpoints.method(CONF_GET_REQUEST, BooleanMessage,
                       path='session/wishlist',
                       http_method='POST', name='sessionAddToWishlist')
@@ -786,8 +782,8 @@ class ConferenceApi(remote.Service):
         c_key = ndb.Key(urlsafe=request.get('websafeConferenceKey'))
         s_key = ndb.Key(urlsafe=request.get('websafeSpeakerKey'))
 
-        sessions = Session.query(Session.websafeConferenceKey == c_key)
-        sessions = sessions.filter(Session.websafeSpeakerKey == s_key)
+        sessions = Session.query(Session.conferenceKey == c_key)
+        sessions = sessions.filter(Session.speakerKey == s_key)
         sessions = sessions.fetch()
         if len(sessions) >= 2:
             speaker = s_key.get()
