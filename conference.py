@@ -592,6 +592,15 @@ class ConferenceApi(remote.Service):
         # copy ConferenceForm/ProtoRPC Message into dict
         data = {field.name: getattr(request, field.name) for field in request.all_fields()}
 
+        # check if conf exists given websafeKey
+        conf, data['conferenceKey'] = self._validateKey(request.websafeConferenceKey)
+        if conf.organizerUserId != user_id:
+            raise endpoints.UnauthorizedException('User is not conference organizer.')
+
+        if request.websafeSpeakerKey:
+            # will raise error if speaker key is invalid
+            speaker, data['speakerKey'] = self._validateKey(request.websafeSpeakerKey)
+
         # add default values for those missing (both data model & outbound Message)
         for df in SESSION_DEFAULTS:
             if data[df] in (None, []):
@@ -603,13 +612,6 @@ class ConferenceApi(remote.Service):
             data['date'] = datetime.strptime(data['date'][:10], "%Y-%m-%d").date()
         if data['startTime']:
             data['startTime'] = datetime.strptime(data['startTime'], "%H:%M").time()
-
-        if request.websafeSpeakerKey:
-            # will raise error if speaker key is invalid
-            speaker, data['speakerKey'] = self._validateKey(request.websafeSpeakerKey)
-
-        # check if conf exists given websafeKey
-        conf, data['conferenceKey'] = self._validateKey(request.websafeConferenceKey)
 
         sess_id = Session.allocate_ids(size=1, parent=data['conferenceKey'])[0]
         sess_key = ndb.Key(Session, sess_id, parent=data['conferenceKey'])
