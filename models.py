@@ -4,13 +4,10 @@
 
 Udacity conference server-side Python App Engine data & ProtoRPC models
 
-$Id: models.py,v 1.1 2014/05/24 22:01:10 wesc Exp $
-
-created/forked from conferences.py by wesc on 2014 may 24
 
 """
 
-__author__ = 'wesc+api@google.com (Wesley Chun)'
+__author__ = 'stevenbarnhurst@gmail.com (Steven Barnhurst)'
 
 import httplib
 import endpoints
